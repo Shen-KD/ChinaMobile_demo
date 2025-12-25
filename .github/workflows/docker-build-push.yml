@@ -57,7 +57,9 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ github.event.repository.name }}-${{ matrix.name }}
+          # TCR repository name constraints can be strict in some orgs:
+          # use only lowercase letters and digits (no '_' or '-')
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/chinamobiledemo${{ matrix.name }}
           tags: |
             type=sha,format=short,suffix=-commit
             type=raw,value=latest,enable={{is_default_branch}}

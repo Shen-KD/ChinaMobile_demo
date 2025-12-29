@@ -73,8 +73,8 @@ export const BACKEND_API_CONFIG = {
   baseUrl: runtimeConfig?.VITE_API_BASE_URL !== undefined
     ? runtimeConfig.VITE_API_BASE_URL
     : isDev 
-      ? (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000')
-      : '', // 生产环境使用相对路径，nginx会代理到后端
+    ? (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000')
+    : '', // 生产环境使用相对路径，nginx会代理到后端
 }
 
 // System Prompt - 采购寻源专家角色设定

@@ -25,10 +25,21 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     container_name: sca-backend
+    image: crpi-8rc8wfim7gn3al0b.cn-shanghai.personal.cr.aliyuncs.com/wlw-sca/chinamobiledemo-backend:v1.0.0
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+asyncmy://test_account%3Aadmin:test123@sca-matrixone:6001/xunyuan_agent
+      LLM_API_KEY: sk-vbejswkfqhmfkslsfluyhhrlamxdhtzonsundldhjfjecfxi
+      LLM_BASE_URL: http://localhost:8000
+      LLM_DEFAULT_MODEL: qwen-turbo
+      LLM_MAX_TOKENS: 4096
+      LLM_TEMPERATURE: 0.7
+      LLM_STREAM: true
+      WEB_SEARCH_API_URL: ""
     ports:
+      - "8000:8000"
       - "8000:8000"
 
   frontend:
@@ -36,6 +47,17 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
     container_name: sca-frontend
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      BACKEND_HOST: backend
+      BACKEND_PORT: 8000
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     ports:
       - "5173:80"
 

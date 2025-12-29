@@ -6,6 +6,11 @@ http {
     include       /etc/nginx/mime.types;
     default_type  application/octet-stream;
 
+    # 定义backend upstream
+    upstream backend_upstream {
+        server ${BACKEND_HOST}:${BACKEND_PORT};
+    }
+
     server {
         listen 80;
         server_name localhost;
@@ -35,7 +40,7 @@ http {
 
         # Proxy backend API requests
         location /api/ {
-            proxy_pass http://backend:8000/api/;
+            proxy_pass http://backend_upstream/api/;
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -59,19 +64,18 @@ http {
         #     proxy_set_header X-Real-IP $remote_addr;
         #     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         #     proxy_set_header X-Forwarded-Proto $scheme;
-
-        #     # 支持多种认证方式
-        #     # 如果前端发送了Authorization头，则转发；否则使用默认的moi-key
+            # 支持多种认证方式
+            # 如果前端发送了Authorization头，则转发；否则使用默认的moi-key
         #     proxy_set_header Authorization $http_authorization;
         #     proxy_set_header moi-key aAVwjAZB4RG_JcPaFR0ZVR4r5yitSjHeKimpdSFKsDaBEt4QzZGZk35D2dEIBmXXbJKG7XHTsTzq-GyC;
         #     proxy_set_header X-API-Key $http_x_api_key;
 
-        #     # CORS headers
+            # CORS headers
         #     add_header 'Access-Control-Allow-Origin' '*' always;
         #     add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
         #     add_header 'Access-Control-Allow-Headers' 'Content-Type, moi-key' always;
 
-        #     # Handle preflight requests
+            # Handle preflight requests
         #     if ($request_method = 'OPTIONS') {
         #         return 204;
         #     }

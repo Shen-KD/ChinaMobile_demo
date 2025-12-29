@@ -6,26 +6,69 @@ on:
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: "GitHub Runner used build image"
+        type: choice
+        default: "ubuntu-latest"
+        options:
+          - "ubuntu-latest"
+      override-tag:
+        description: "override default auto generated tag ({version}-xxxx)"
+        type: string
+        default: ""
+      version:
+        description: "version prefix for image tag (default: $vars.VERSION_PREFIX)"
+        type: string
+        required: false
+      use-cache:
+        description: "Turn on to enable cache import (Always export cache)."
+        type: boolean
+        default: true
+
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        required: false
+      override-tag:
+        type: string
+        required: false
+      version:
+        type: string
+        required: false
+      use-cache:
+        type: boolean
+        required: false
+        default: true
+    secrets:
+      ACR_USERNAME:
+        required: true
+      ACR_PASSWORD:
+        required: true
+    outputs:
+      backend_image_tag:
+        value: ${{ jobs.image-build.outputs.backend_image_tag }}
+      frontend_image_tag:
+        value: ${{ jobs.image-build.outputs.frontend_image_tag }}
 
 permissions:
+  id-token: write
   contents: read
 
-concurrency:
-  group: docker-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
-  # Tencent Cloud TCR
-  # Example: xxx.tencentcloudcr.com
-  REGISTRY: ${{ secrets.TCR_REGISTRY }}
-  # Namespace / project in TCR
-  IMAGE_NAMESPACE: ${{ secrets.TCR_NAMESPACE }}
+  TCR_REGISTRY: "crpi-8rc8wfim7gn3al0b.cn-shanghai.personal.cr.aliyuncs.com"
+  TCR_NAMESPACE: "wlw-sca"
+  IMAGE_NAME: "chinamobiledemo"
+  PLATFORM: "linux/amd64"
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  image-build:
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         include:
           - name: backend
@@ -34,49 +77,111 @@ jobs:
           - name: frontend
             context: ./frontend
             dockerfile: ./frontend/Dockerfile
+    outputs:
+      backend_image_tag: ${{ steps.set-outputs.outputs.backend_image_tag }}
+      frontend_image_tag: ${{ steps.set-outputs.outputs.frontend_image_tag }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 3
+
+      - name: Prepare
+        id: prep
+        run: |
+          DOCKER_IMAGE="${{ env.TCR_REGISTRY }}/${{ env.TCR_NAMESPACE }}/${{ env.IMAGE_NAME }}-${{ matrix.name }}"
+
+          # default: usage last tag as prefix of version (need fetch-depth: 0)
+          #VERSION=$(git describe --always --tags $(git rev-list --tags --max-count=1))
+          VERSION=${{ inputs.version || vars.VERSION_PREFIX || 'dev' }}
+          # If this is git tag, use the tag name as a docker tag
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          fi
+
+          COMMIT_DATE=$(git log -1 --format="%cd" --date=format:"%Y-%m-%d")
+          VERSION=${VERSION}-${GITHUB_SHA::8}-${COMMIT_DATE}
+
+          if [ -n "${{ inputs.override-tag }}" ]; then
+            VERSION="${{ inputs.override-tag }}"
+          fi
+
+          TAGS="${DOCKER_IMAGE}:${VERSION}"
+          # If the VERSION looks like a version number, assume that
+          # this is the most recent version of the image and also
+          # tag it 'latest'.
+          if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3} ]]; then
+            TAGS="$TAGS,${DOCKER_IMAGE}:latest"
+          fi
+
+          # Set output parameters.
+          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
+          echo "docker_image=${DOCKER_IMAGE}" >> $GITHUB_OUTPUT
+          echo "image_tag=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Get image info
+        run: |
+          echo "image-tags: ${{ steps.prep.outputs.tags }}"
+          echo "image-name: ${{ matrix.name }}"
+
+      - name: Login to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.TCR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: ${{ env.PLATFORM }}
 
-      - name: Set up Buildx
+      - name: Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to TCR
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.TCR_USERNAME }}
-          password: ${{ secrets.TCR_PASSWORD }}
+      - name: Generate cache settings
+        id: cache-settings
+        run: |
+          if [ "${{ inputs.use-cache || 'true' }}" == "true" ]; then
+            echo "cache_from=type=registry,ref=${{ steps.prep.outputs.docker_image }}:cache-${{ matrix.name }}" >> $GITHUB_OUTPUT
+          fi
+          echo "cache_to=type=registry,ref=${{ steps.prep.outputs.docker_image}}:cache-${{ matrix.name }},mode=max,oci-mediatypes=false,image-manifest=false" >> $GITHUB_OUTPUT
 
-      - name: Extract metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ github.event.repository.name }}-${{ matrix.name }}
-          tags: |
-            type=sha,format=short,suffix=-commit
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=ref,event=tag
+      - name: Prepare build args
+        id: build-args
+        if: matrix.name == 'frontend'
+        run: |
+          echo "args<<EOF" >> $GITHUB_OUTPUT
+          echo "VITE_SILICONFLOW_API_KEY=${{ secrets.VITE_SILICONFLOW_API_KEY }}" >> $GITHUB_OUTPUT
+          echo "VITE_MOI_BASE_URL=${{ secrets.VITE_MOI_BASE_URL }}" >> $GITHUB_OUTPUT
+          echo "VITE_MOI_API_KEY=${{ secrets.VITE_MOI_API_KEY }}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Build (and push)
+      - name: Build
         uses: docker/build-push-action@v6
         with:
+          builder: ${{ steps.buildx.outputs.name }}
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
-          platforms: linux/amd64
+          platforms: ${{ env.PLATFORM }}
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            VITE_SILICONFLOW_API_KEY=${{ secrets.VITE_SILICONFLOW_API_KEY }}
-            VITE_MOI_BASE_URL=${{ secrets.VITE_MOI_BASE_URL }}
-            VITE_MOI_API_KEY=${{ secrets.VITE_MOI_API_KEY }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ steps.prep.outputs.tags }}
+          build-args: ${{ steps.build-args.outputs.args }}
+          cache-from: ${{ steps.cache-settings.outputs.cache_from }}
+          cache-to: ${{ steps.cache-settings.outputs.cache_to }}
+          provenance: false
+          sbom: false
 
-
+      - name: Set job outputs
+        id: set-outputs
+        if: matrix.name == 'backend' || matrix.name == 'frontend'
+        run: |
+          if [ "${{ matrix.name }}" == "backend" ]; then
+            echo "backend_image_tag=${{ steps.prep.outputs.image_tag }}" >> $GITHUB_OUTPUT
+          fi
+          if [ "${{ matrix.name }}" == "frontend" ]; then
+            echo "frontend_image_tag=${{ steps.prep.outputs.image_tag }}" >> $GITHUB_OUTPUT
+          fi

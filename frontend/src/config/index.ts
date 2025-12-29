@@ -36,13 +36,28 @@ export const AVAILABLE_MODELS: ModelOption[] = [
 // 默认模型
 export const DEFAULT_MODEL = 'deepseek-ai/DeepSeek-V3'
 
+// 运行时配置类型定义
+declare global {
+  interface Window {
+    APP_CONFIG?: {
+      VITE_SILICONFLOW_BASE_URL?: string
+      VITE_SILICONFLOW_API_KEY?: string
+      VITE_API_BASE_URL?: string
+    }
+  }
+}
+
+// 从运行时配置或构建时配置读取
+const runtimeConfig = typeof window !== 'undefined' ? window.APP_CONFIG : undefined
+
 // API 配置
+// 优先使用运行时配置（容器启动时注入），如果没有则使用构建时配置
 export const API_CONFIG = {
   // 硅基流动平台 API 配置
-  baseUrl: 'https://api.siliconflow.cn/v1',
+  baseUrl: runtimeConfig?.VITE_SILICONFLOW_BASE_URL || import.meta.env.VITE_SILICONFLOW_BASE_URL || '',
   
-  // API Key - 请在 .env 文件中配置，或直接替换为您的 API Key
-  apiKey: import.meta.env.VITE_SILICONFLOW_API_KEY || '',
+  // API Key - 优先使用运行时配置，否则使用构建时配置
+  apiKey: runtimeConfig?.VITE_SILICONFLOW_API_KEY || import.meta.env.VITE_SILICONFLOW_API_KEY || '',
   
   // 请求参数
   maxTokens: 4096,
@@ -51,13 +66,15 @@ export const API_CONFIG = {
 }
 
 // 后端API配置（用于MOI数据库查询）
-// 在生产环境中，通过nginx代理访问后端API
+// 优先使用运行时配置，如果没有则使用构建时配置
 const isDev = import.meta.env.DEV
 export const BACKEND_API_CONFIG = {
-  // 开发环境直接访问localhost:8000，生产环境通过nginx代理（相对路径）
-  baseUrl: isDev 
-    ? (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000')
-    : '', // 生产环境使用相对路径，nginx会代理到后端
+  // 优先使用运行时配置，开发环境直接访问，生产环境通过nginx代理（相对路径）
+  baseUrl: runtimeConfig?.VITE_API_BASE_URL !== undefined
+    ? runtimeConfig.VITE_API_BASE_URL
+    : isDev 
+      ? (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000')
+      : '', // 生产环境使用相对路径，nginx会代理到后端
 }
 
 // System Prompt - 采购寻源专家角色设定

@@ -21,23 +21,38 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     container_name: sca-backend
+    image: crpi-8rc8wfim7gn3al0b.cn-shanghai.personal.cr.aliyuncs.com/wlw-sca/chinamobiledemo-backend:v1.0.0
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      DATABASE_URL: mysql+asyncmy://test_account%3Aadmin:test123@sca-matrixone:6001/xunyuan_agent
+      LLM_API_KEY: sk-vbejswkfqhmfkslsfluyhhrlamxdhtzonsundldhjfjecfxi
+      LLM_BASE_URL: http://localhost:8000
+      LLM_DEFAULT_MODEL: qwen-turbo
+      LLM_MAX_TOKENS: 4096
+      LLM_TEMPERATURE: 0.7
+      LLM_STREAM: true
+      WEB_SEARCH_API_URL: ""
     ports:
-      - "8001:8000"
+      - "8000:8000"
 
   frontend:
     build:
       context: ../frontend
       dockerfile: Dockerfile
     container_name: sca-frontend
+    image: crpi-8rc8wfim7gn3al0b.cn-shanghai.personal.cr.aliyuncs.com/wlw-sca/chinamobiledemo-frontend:v1.0.0
     depends_on:
       backend:
         condition: service_started
     environment:
-      BACKEND_HOST: backend
-      BACKEND_PORT: 8000
+      VITE_SILICONFLOW_API_KEY: sk-vbejswkfqhmfkslsfluyhhrlamxdhtzonsundldhjfjecfxi # 模型API密钥
+      VITE_SILICONFLOW_BASE_URL: http://localhost:8000 # 模型地址
+      VITE_API_BASE_URL: "http://localhost:8000" # 后端API地址 配置前端CONFIG
+      # Nginx 代理配置
+      BACKEND_HOST: localhost # 后端主机名
+      BACKEND_PORT: 8000 # 后端端口
     logging:
       driver: "json-file"
       options:

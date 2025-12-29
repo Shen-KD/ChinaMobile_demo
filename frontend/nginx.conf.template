@@ -58,29 +58,28 @@ http {
         }
 
         # Proxy MOI database requests to avoid CORS issues
-        location /moi-api/ {
-            proxy_pass https://freetier-01.cn-hangzhou.cluster.matrixonecloud.cn/;
-            proxy_set_header Host freetier-01.cn-hangzhou.cluster.matrixonecloud.cn;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-
+        # location /moi-api/ {
+        #     proxy_pass https://freetier-01.cn-hangzhou.cluster.matrixonecloud.cn/;
+        #     proxy_set_header Host freetier-01.cn-hangzhou.cluster.matrixonecloud.cn;
+        #     proxy_set_header X-Real-IP $remote_addr;
+        #     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        #     proxy_set_header X-Forwarded-Proto $scheme;
             # 支持多种认证方式
             # 如果前端发送了Authorization头，则转发；否则使用默认的moi-key
-            proxy_set_header Authorization $http_authorization;
-            proxy_set_header moi-key aAVwjAZB4RG_JcPaFR0ZVR4r5yitSjHeKimpdSFKsDaBEt4QzZGZk35D2dEIBmXXbJKG7XHTsTzq-GyC;
-            proxy_set_header X-API-Key $http_x_api_key;
+        #     proxy_set_header Authorization $http_authorization;
+        #     proxy_set_header moi-key aAVwjAZB4RG_JcPaFR0ZVR4r5yitSjHeKimpdSFKsDaBEt4QzZGZk35D2dEIBmXXbJKG7XHTsTzq-GyC;
+        #     proxy_set_header X-API-Key $http_x_api_key;
 
             # CORS headers
-            add_header 'Access-Control-Allow-Origin' '*' always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
-            add_header 'Access-Control-Allow-Headers' 'Content-Type, moi-key' always;
+        #     add_header 'Access-Control-Allow-Origin' '*' always;
+        #     add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+        #     add_header 'Access-Control-Allow-Headers' 'Content-Type, moi-key' always;
 
             # Handle preflight requests
-            if ($request_method = 'OPTIONS') {
-                return 204;
-            }
-        }
+        #     if ($request_method = 'OPTIONS') {
+        #         return 204;
+        #     }
+        # }
 
         # Cache static assets
         location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {

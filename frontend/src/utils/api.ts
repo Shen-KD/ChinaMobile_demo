@@ -558,6 +558,9 @@ ${conversationSummary}
 {"projectName": "2024年度通信设备采购项目", "items": [{"name": "STM32F103C8T6", "quantity": "100"}, {"name": "ESP32-WROOM-32"}]}`
 
   try {
+    // 获取当前选择的模型
+    const { selectedModel } = useStore.getState()
+    
     const response = await fetch(`${API_CONFIG.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -565,7 +568,7 @@ ${conversationSummary}
         'Authorization': `Bearer ${API_CONFIG.apiKey}`
       },
       body: JSON.stringify({
-        model: 'deepseek-ai/DeepSeek-V3', // 使用 DeepSeek V3 模型提取
+        model: selectedModel,
         messages: [
           { role: 'user', content: extractPrompt }
         ],

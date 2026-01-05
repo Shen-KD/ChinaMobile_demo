@@ -6,7 +6,8 @@ export interface ModelOption {
   provider: string
 }
 
-export const AVAILABLE_MODELS: ModelOption[] = [
+// 默认模型列表（当配置文件中未配置时使用）
+const DEFAULT_MODELS: ModelOption[] = [
   {
     id: 'Qwen/Qwen2.5-VL-72B-Instruct',
     name: 'Qwen2.5-VL-72B',
@@ -33,9 +34,6 @@ export const AVAILABLE_MODELS: ModelOption[] = [
   }
 ]
 
-// 默认模型
-export const DEFAULT_MODEL = 'deepseek-ai/DeepSeek-V3'
-
 // 运行时配置类型定义
 declare global {
   interface Window {
@@ -43,12 +41,19 @@ declare global {
       VITE_SILICONFLOW_BASE_URL?: string
       VITE_SILICONFLOW_API_KEY?: string
       VITE_API_BASE_URL?: string
+      AVAILABLE_MODELS?: ModelOption[]
     }
   }
 }
 
 // 从运行时配置或构建时配置读取
 const runtimeConfig = typeof window !== 'undefined' ? window.APP_CONFIG : undefined
+
+// 从运行时配置或使用默认值
+export const AVAILABLE_MODELS: ModelOption[] = runtimeConfig?.AVAILABLE_MODELS || DEFAULT_MODELS
+
+// 默认模型：使用可用模型列表中的第一个模型
+export const DEFAULT_MODEL = AVAILABLE_MODELS.length > 0 ? AVAILABLE_MODELS[0].id : 'DeepSeek-V3'
 
 // API 配置
 // 优先使用运行时配置（容器启动时注入），如果没有则使用构建时配置

@@ -1,0 +1,25 @@
+{
+  "@class": "org.apereo.cas.services.RegexRegisteredService",
+  "serviceId": "^(http|https)://.*",
+  "name": "Wildcard Service - 允许所有服务（开发环境）",
+  "id": 1,
+  "description": "开发环境配置：允许所有 HTTP/HTTPS 服务使用 CAS",
+  "evaluationOrder": 1,
+  "enabled": true,
+  "anonymousAccess": false,
+  "publicAccess": false,
+  "requiredHandlers": ["java.util.HashSet", []],
+  "usernameAttributeProvider": {
+    "@class": "org.apereo.cas.services.DefaultRegisteredServiceUsernameProvider"
+  },
+  "logoutType": "BACK_CHANNEL",
+  "attributeReleasePolicy": {
+    "@class": "org.apereo.cas.services.ReturnAllAttributeReleasePolicy"
+  },
+  "accessStrategy": {
+    "@class": "org.apereo.cas.services.DefaultRegisteredServiceAccessStrategy",
+    "enabled": true,
+    "ssoEnabled": true
+  }
+}
+

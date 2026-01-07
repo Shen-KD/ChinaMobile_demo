@@ -1,0 +1,27 @@
+cas:
+  server:
+    name: http://localhost:8080
+    prefix: ${cas.server.name}/cas
+  
+  # 服务注册配置 - 允许所有服务（开发环境）
+  service-registry:
+    core:
+      init-from-json: true
+    json:
+      location: file:/etc/cas/config/services
+      watcher-enabled: false
+  
+  # 认证配置 - 使用简单的静态用户列表
+  authn:
+    accept:
+      enabled: true
+      users:
+        - casuser::Mellon
+        - admin::admin123
+
+# 服务器配置 - 禁用 SSL/TLS
+server:
+  ssl:
+    enabled: false
+  port: 8080
+

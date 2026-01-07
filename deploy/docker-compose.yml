@@ -65,6 +65,25 @@ services:
     ports:
       - "5178:80"
 
+  cas:
+    image: apereo/cas:7.0.0
+    container_name: sca-cas
+    ports:
+      - "8080:8080"
+    environment:
+      CAS_SERVER_NAME: "http://localhost:8080"
+      CAS_SERVER_PREFIX: "/cas"
+      SERVER_SSL_ENABLED: "false"
+      SPRING_PROFILES_ACTIVE: "standalone"
+    volumes:
+      - ./cas/config:/etc/cas/config
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/cas/login || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
 volumes:
   db_data:
 

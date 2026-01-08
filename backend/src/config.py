@@ -57,5 +57,6 @@ class Settings(BaseModel):
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production-please")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
+    MODE: str = os.getenv("MODE", "test")
 
 settings = Settings()

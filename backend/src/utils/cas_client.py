@@ -18,6 +18,8 @@ class CASClient:
         Construct the CAS login URL with the service parameter.
         """
         params = {'service': service_url}
+        if settings.MODE == 'test':
+            params['redirect'] = 'forbid'
         return f"{self.cas_server_url}/login?{urllib.parse.urlencode(params)}"
 
     def get_logout_url(self, service_url: Optional[str] = None) -> str:
@@ -27,6 +29,8 @@ class CASClient:
         url = f"{self.cas_server_url}/logout"
         if service_url:
             params = {'service': service_url}
+            if settings.MODE == 'test':
+                params['redirect'] = 'forbid'
             url += f"?{urllib.parse.urlencode(params)}"
         return url
 

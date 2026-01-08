@@ -14,7 +14,7 @@ import {
   X
 } from 'lucide-react'
 import { useStore } from '../../store'
-import { AVAILABLE_MODELS } from '../../config'
+import { AVAILABLE_MODELS, BACKEND_API_CONFIG } from '../../config'
 import ChinaMobileLogo from '../ChinaMobileLogo'
 import ModelSettings from '../ModelSettings'
 import './Sidebar.css'
@@ -31,7 +31,9 @@ export default function Sidebar() {
     selectConversation,
     deleteConversation,
     renameConversation,
-    selectedModel
+    selectedModel,
+    user,
+    logout
   } = useStore()
   
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -248,12 +250,27 @@ export default function Sidebar() {
               <span>模型设置</span>
               <span className="current-model-tag">{currentModelName}</span>
             </button>
-            <div className="user-info">
-              <div className="avatar">
-                <User size={16} />
-              </div>
-              <span>采购专员</span>
-            </div>
+            
+            {user ? (
+              <button className="footer-btn user-btn" onClick={logout} title="点击退出登录">
+                <div className="avatar">
+                  <User size={16} />
+                </div>
+                <div className="user-info-text">
+                  <span>{user.username || '用户'}</span>
+                  <span className="logout-text">退出</span>
+                </div>
+              </button>
+            ) : (
+              <button className="footer-btn login-btn" onClick={() => {
+                const baseUrl = BACKEND_API_CONFIG.baseUrl || '';
+                const service = window.location.origin + window.location.pathname;
+                window.location.href = `${baseUrl}/api/auth/login?service=${encodeURIComponent(service)}`;
+              }}>
+                <User size={18} />
+                <span>登录</span>
+              </button>
+            )}
           </div>
         </div>
       </aside>

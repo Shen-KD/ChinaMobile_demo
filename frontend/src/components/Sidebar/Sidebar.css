@@ -316,14 +316,35 @@
   font-weight: 500;
 }
 
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+/* User Info / Login Button */
+.footer-btn.user-btn {
   margin-top: 4px;
   border-top: 1px solid var(--border-color);
   padding-top: 16px;
+  height: auto;
+}
+
+.footer-btn.login-btn {
+  margin-top: 4px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+}
+
+.user-info-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.2;
+}
+
+.logout-text {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.footer-btn.user-btn:hover .logout-text {
+  color: var(--error);
 }
 
 .avatar {
@@ -336,13 +357,6 @@
   justify-content: center;
   color: white;
   flex-shrink: 0;
-}
-
-.user-info span {
-  font-size: 13px;
-  color: var(--text-primary);
-  font-weight: 500;
-  white-space: nowrap;
 }
 
 /* Expand Button (when collapsed) */

@@ -25,7 +25,7 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     container_name: sca-backend
-    image: crpi-8rc8wfim7gn3al0b.cn-shanghai.personal.cr.aliyuncs.com/wlw-sca/chinamobiledemo-backend:v1.0.0-0179e1e7-2025-12-29
+    image: crpi-8rc8wfim7gn3al0b.cn-shanghai.personal.cr.aliyuncs.com/wlw-sca/chinamobiledemo-backend:v1.0.0
     depends_on:
       db:
         condition: service_healthy
@@ -38,6 +38,7 @@ services:
       LLM_TEMPERATURE: 0.7
       LLM_STREAM: true
       WEB_SEARCH_API_URL: ""
+      WEB_SEARCH_API_KEY: ""
     ports:
       - "8000:8000"
 
@@ -52,10 +53,10 @@ services:
         condition: service_started
     environment:
       VITE_SILICONFLOW_API_KEY: sk-vbejswkfqhmfkslsfluyhhrlamxdhtzonsundldhjfjecfxi # 模型API密钥
-      VITE_SILICONFLOW_BASE_URL: http://localhost:8000 # 模型地址
-      VITE_API_BASE_URL: "http://localhost:8000" # 后端API地址 配置前端CONFIG
+      VITE_SILICONFLOW_BASE_URL: http://10.222.3.121:5178/ai # 模型地址
+      VITE_API_BASE_URL: "http://10.222.3.121:5178" # 后端API地址 配置前端CONFIG
       # Nginx 代理配置
-      BACKEND_HOST: backend # 后端主机
+      BACKEND_HOST: 10.222.3.121 # 后端主机
       BACKEND_PORT: 8000 # 后端端口
     logging:
       driver: "json-file"
@@ -64,6 +65,25 @@ services:
         max-file: "3"
     ports:
       - "5178:80"
+
+  cas:
+    image: apereo/cas:7.0.0
+    container_name: sca-cas
+    ports:
+      - "8080:8080"
+    environment:
+      CAS_SERVER_NAME: "http://localhost:8080"
+      CAS_SERVER_PREFIX: "/cas"
+      SERVER_SSL_ENABLED: "false"
+      SPRING_PROFILES_ACTIVE: "standalone"
+    volumes:
+      - ./cas/config:/etc/cas/config
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/cas/login || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 volumes:
   db_data:

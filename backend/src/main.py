@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from src.config import settings
-from src.routers import ai, moi
+from src.routers import ai, moi, auth
 from src.utils.logger import setup_logging
 
 # 初始化日志系统
@@ -59,7 +59,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=origins_env,
     allow_origin_regex=".*" if wildcard else None,
-    allow_credentials=not wildcard,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -72,6 +72,7 @@ async def health_check() -> dict:
 
 app.include_router(ai.router, tags=["ai"])
 app.include_router(moi.router, tags=["moi"])
+app.include_router(auth.router, tags=["auth"])
 
 
 @app.exception_handler(HTTPException)

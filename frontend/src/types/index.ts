@@ -42,13 +42,21 @@ export interface Conversation {
 
 export type Theme = 'light' | 'dark'
 
+export interface User {
+  username: string;
+  [key: string]: any;
+}
+
 export interface AppState {
   theme: Theme
   sidebarCollapsed: boolean
   conversations: Conversation[]
   currentConversationId: string | null
   isLoading: boolean
+  isRedirecting: boolean
+  isValidating: boolean
   selectedModel: string
+  user: User | null
   
   // Actions
   toggleTheme: () => void
@@ -63,5 +71,8 @@ export interface AppState {
   setLoading: (loading: boolean) => void
   getCurrentConversation: () => Conversation | null
   setSelectedModel: (modelId: string) => void
+  
+  // Auth
+  checkAuth: () => Promise<void>
+  logout: () => void
 }
-

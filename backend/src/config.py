@@ -46,6 +46,17 @@ class Settings(BaseModel):
         "aAVwjAZB4RG_JcPaFR0ZVR4r5yitSjHeKimpdSFKsDaBEt4QzZGZk35D2dEIBmXXbJKG7XHTsTzq-GyC"
     )
 
+    # CAS Configuration
+    # CAS Server Base URL
+    CAS_SERVER_URL: str = os.getenv("CAS_SERVER_URL", "http://10.222.3.121:8080/cas")
+    # Backend URL (for callbacks)
+    APP_BASE_URL: str = os.getenv("APP_BASE_URL", "http://10.222.3.121:5173")
+    # Frontend URL (to redirect after login)
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://10.222.3.121:5173")
+    # Security
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production-please")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 day
+    MODE: str = os.getenv("MODE", "test")
 
 settings = Settings()
-
